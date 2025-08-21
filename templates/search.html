@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block title %}Search & Q&A - AI Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        <i class="fas fa-search me-2"></i>Search & Question Answering
+    </h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Search Interface -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="search-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-panel" type="button" role="tab">
+                                <i class="fas fa-search me-2"></i>Semantic Search
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="qa-tab" data-bs-toggle="tab" data-bs-target="#qa-panel" type="button" role="tab">
+                                <i class="fas fa-question-circle me-2"></i>Question & Answer
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="search-tab-content">
+                        <!-- Semantic Search Panel -->
+                        <div class="tab-pane fade show active" id="search-panel" role="tabpanel">
+                            <form id="search-form">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control form-control-lg" id="search-input" 
+                                           placeholder="Enter your search query..." autocomplete="off">
+                                    <button class="btn btn-primary btn-lg" type="submit" id="search-btn">
+                                        <i class="fas fa-search me-2"></i>Search
+                                    </button>
+                                </div>
+                                
+                                <!-- Advanced Options -->
+                                <div class="collapse" id="search-options">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="max-results" class="form-label">Max Results:</label>
+                                            <select class="form-select" id="max-results">
+                                                <option value="5">5 results</option>
+                                                <option value="10" selected>10 results</option>
+                                                <option value="20">20 results</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="similarity-threshold" class="form-label">Similarity Threshold:</label>
+                                            <select class="form-select" id="similarity-threshold">
+                                                <option value="0.1">Low (0.1)</option>
+                                                <option value="0.3" selected>Medium (0.3)</option>
+                                                <option value="0.5">High (0.5)</option>
+                                                <option value="0.7">Very High (0.7)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-link btn-sm p-0" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#search-options">
+                                    <i class="fas fa-cog me-1"></i>Advanced Options
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Q&A Panel -->
+                        <div class="tab-pane fade" id="qa-panel" role="tabpanel">
+                            <form id="qa-form">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control form-control-lg" id="question-input" 
+                                           placeholder="Ask a question about your documents..." autocomplete="off">
+                                    <button class="btn btn-success btn-lg" type="submit" id="qa-btn">
+                                        <i class="fas fa-question-circle me-2"></i>Ask
+                                    </button>
+                                </div>
+                                
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Ask specific questions about your uploaded documents. The AI will find relevant content and provide detailed answers.
+                                </small>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading Spinner -->
+            <div id="loading-spinner" class="text-center loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Processing your request...</p>
+            </div>
+            
+            <!-- Search Results -->
+            <div id="search-results" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Search Results</h5>
+                        <small class="text-muted" id="search-info"></small>
+                    </div>
+                    <div class="card-body search-results" id="results-container">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Q&A Response -->
+            <div id="qa-response" style="display: none;">
+                <div class="qa-response">
+                    <h5><i class="fas fa-robot me-2"></i>AI Answer</h5>
+                    <div id="answer-content"></div>
+                    <hr>
+                    <div id="answer-metadata"></div>
+                    <div id="answer-sources" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Quick Search Examples -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Search Examples</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-secondary btn-sm text-start" onclick="setSearchQuery('machine learning algorithms')">
+                            <i class="fas fa-search me-2"></i>machine learning algorithms
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm text-start" onclick="setSearchQuery('data preprocessing techniques')">
+                            <i class="fas fa-search me-2"></i>data preprocessing techniques
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm text-start" onclick="setSearchQuery('neural network architecture')">
+                            <i class="fas fa-search me-2"></i>neural network architecture
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Q&A Examples -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Question Examples</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-success btn-sm text-start" onclick="setQuestionQuery('What is the main purpose of this document?')">
+                            <i class="fas fa-question me-2"></i>What is the main purpose?
+                        </button>
+                        <button class="btn btn-outline-success btn-sm text-start" onclick="setQuestionQuery('How does this process work?')">
+                            <i class="fas fa-question me-2"></i>How does this process work?
+                        </button>
+                        <button class="btn btn-outline-success btn-sm text-start" onclick="setQuestionQuery('What are the key benefits mentioned?')">
+                            <i class="fas fa-question me-2"></i>What are the key benefits?
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Statistics -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Search Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div id="search-stats">
+                        <p class="text-muted text-center">No search performed yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Searches -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Searches</h6>
+                </div>
+                <div class="card-body">
+                    <div id="recent-searches">
+                        <p class="text-muted text-center">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSearchResults = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Search form submission
+    document.getElementById('search-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        performSearch();
+    });
+    
+    // Q&A form submission
+    document.getElementById('qa-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        askQuestion();
+    });
+    
+    // Load recent searches
+    loadRecentSearches();
+});
+
+function performSearch() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) {
+        alert('Please enter a search query');
+        return;
+    }
+    
+    const maxResults = parseInt(document.getElementById('max-results').value);
+    const threshold = parseFloat(document.getElementById('similarity-threshold').value);
+    
+    showLoading();
+    hideResults();
+    
+    fetch('/api/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            query: query,
+            max_results: maxResults,
+            threshold: threshold
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        
+        if (data.error) {
+            showError('Search failed: ' + data.error);
+            return;
+        }
+        
+        displaySearchResults(data);
+        updateSearchStats(data);
+        loadRecentSearches(); // Refresh recent searches
+    })
+    .catch(error => {
+        hideLoading();
+        showError('Search failed: ' + error.message);
+    });
+}
+
+function askQuestion() {
+    const question = document.getElementById('question-input').value.trim();
+    if (!question) {
+        alert('Please enter a question');
+        return;
+    }
+    
+    showLoading();
+    hideResults();
+    
+    fetch('/api/ask', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            question: question,
+            max_results: 5,
+            threshold: 0.3
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        
+        if (data.error) {
+            showError('Q&A failed: ' + data.error);
+            return;
+        }
+        
+        displayQAResponse(data);
+        loadRecentSearches(); // Refresh recent searches
+    })
+    .catch(error => {
+        hideLoading();
+        showError('Q&A failed: ' + error.message);
+    });
+}
+
+function displaySearchResults(data) {
+    const container = document.getElementById('results-container');
+    const searchInfo = document.getElementById('search-info');
+    
+    searchInfo.textContent = `Found ${data.total_results} results in ${Math.round(data.response_time_ms)}ms`;
+    
+    if (data.results.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
+                <h5>No results found</h5>
+                <p class="text-muted">Try adjusting your search terms or lowering the similarity threshold.</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        data.results.forEach((result, index) => {
+            html += `
+                <div class="mb-3 p-3 border rounded">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0">
+                            <i class="fas fa-file-alt me-2"></i>${result.filename}
+                        </h6>
+                        <div>
+                            <span class="badge bg-primary similarity-score">
+                                ${(result.similarity * 100).toFixed(1)}% match
+                            </span>
+                            <span class="badge bg-secondary ms-1">#${result.rank}</span>
+                        </div>
+                    </div>
+                    <div class="chunk-preview">
+                        ${highlightQuery(result.content, data.query)}
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-map-marker-alt me-1"></i>Chunk ${result.chunk_index + 1} 
+                        (pos: ${result.start_position}-${result.end_position})
+                        <i class="fas fa-text-width ms-2 me-1"></i>${result.chunk_length} chars
+                    </small>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    
+    currentSearchResults = data.results;
+    document.getElementById('search-results').style.display = 'block';
+}
+
+function displayQAResponse(data) {
+    const answerContent = document.getElementById('answer-content');
+    const answerMetadata = document.getElementById('answer-metadata');
+    const answerSources = document.getElementById('answer-sources');
+    
+    // Display answer
+    answerContent.innerHTML = `<p class="lead">${data.answer}</p>`;
+    
+    // Display metadata
+    const confidenceClass = data.confidence > 0.7 ? 'success' : data.confidence > 0.4 ? 'warning' : 'danger';
+    answerMetadata.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Confidence:</strong>
+                <span class="badge bg-${confidenceClass} confidence-badge ms-1">
+                    ${(data.confidence * 100).toFixed(1)}%
+                </span>
+            </div>
+            <div class="col-md-4">
+                <strong>Context Chunks:</strong> ${data.num_context_chunks}
+            </div>
+            <div class="col-md-4">
+                <strong>Response Time:</strong> ${Math.round(data.response_time_ms)}ms
+            </div>
+        </div>
+    `;
+    
+    // Display sources
+    if (data.sources && data.sources.length > 0) {
+        let sourcesHtml = '<h6><i class="fas fa-book me-2"></i>Sources:</h6><div class="row">';
+        data.sources.forEach(source => {
+            sourcesHtml += `
+                <div class="col-md-6 mb-2">
+                    <div class="border rounded p-2">
+                        <small>
+                            <i class="fas fa-file me-1"></i><strong>${source.filename}</strong><br>
+                            <span class="text-muted">Similarity: ${(source.similarity * 100).toFixed(1)}%</span>
+                        </small>
+                    </div>
+                </div>
+            `;
+        });
+        sourcesHtml += '</div>';
+        answerSources.innerHTML = sourcesHtml;
+    } else {
+        answerSources.innerHTML = '<p class="text-muted">No sources available</p>';
+    }
+    
+    document.getElementById('qa-response').style.display = 'block';
+}
+
+function highlightQuery(text, query) {
+    if (!query) return text;
+    
+    const words = query.toLowerCase().split(/\s+/);
+    let highlightedText = text;
+    
+    words.forEach(word => {
+        if (word.length > 2) { // Only highlight words longer than 2 characters
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            highlightedText = highlightedText.replace(regex, `<mark>$&</mark>`);
+        }
+    });
+    
+    return highlightedText;
+}
+
+function updateSearchStats(data) {
+    const statsContainer = document.getElementById('search-stats');
+    
+    statsContainer.innerHTML = `
+        <div class="row text-center">
+            <div class="col-6">
+                <div class="mb-2">
+                    <strong>${data.total_results}</strong>
+                    <br><small class="text-muted">Results</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="mb-2">
+                    <strong>${Math.round(data.response_time_ms)}ms</strong>
+                    <br><small class="text-muted">Response Time</small>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="text-center">
+            <small class="text-muted">
+                Query: "${data.query}"<br>
+                Threshold: ${data.threshold}
+            </small>
+        </div>
+    `;
+}
+
+function loadRecentSearches() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('recent-searches');
+            
+            if (data.recent_searches && data.recent_searches.length > 0) {
+                let html = '';
+                data.recent_searches.slice(0, 5).forEach(search => {
+                    const queryPreview = search.query_text.length > 30 ? 
+                        search.query_text.substring(0, 30) + '...' : search.query_text;
+                    
+                    html += `
+                        <div class="mb-2 p-2 border rounded cursor-pointer" onclick="setSearchQuery('${search.query_text}')">
+                            <small class="fw-bold">${queryPreview}</small><br>
+                            <small class="text-muted">
+                                ${search.results_count} results • ${Math.round(search.response_time_ms)}ms
+                            </small>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="text-muted text-center">No recent searches</p>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('recent-searches').innerHTML = '<p class="text-muted text-center">Error loading searches</p>';
+        });
+}
+
+function setSearchQuery(query) {
+    document.getElementById('search-input').value = query;
+    // Switch to search tab
+    const searchTab = new bootstrap.Tab(document.getElementById('search-tab'));
+    searchTab.show();
+}
+
+function setQuestionQuery(question) {
+    document.getElementById('question-input').value = question;
+    // Switch to Q&A tab
+    const qaTab = new bootstrap.Tab(document.getElementById('qa-tab'));
+    qaTab.show();
+}
+
+function showLoading() {
+    document.getElementById('loading-spinner').style.display = 'block';
+}
+
+function hideLoading() {
+    document.getElementById('loading-spinner').style.display = 'none';
+}
+
+function hideResults() {
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('qa-response').style.display = 'none';
+}
+
+function showError(message) {
+    const container = document.getElementById('results-container');
+    container.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+        </div>
+    `;
+    document.getElementById('search-results').style.display = 'block';
+}
+
+// Auto-focus on active tab input
+document.addEventListener('shown.bs.tab', function(e) {
+    if (e.target.id === 'search-tab') {
+        document.getElementById('search-input').focus();
+    } else if (e.target.id === 'qa-tab') {
+        document.getElementById('question-input').focus();
+    }
+});
+</script>
+{% endblock %}

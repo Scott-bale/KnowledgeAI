@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        <i class="fas fa-tachometer-alt me-2"></i>Knowledge Base Dashboard
+    </h1>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                    <h3 class="card-title">{{ total_documents }}</h3>
+                    <p class="card-text">Total Documents</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-2x text-info mb-2"></i>
+                    <h3 class="card-title">{{ total_searches }}</h3>
+                    <p class="card-text">Total Searches</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-database fa-2x text-success mb-2"></i>
+                    <h3 class="card-title" id="vector-count">Loading...</h3>
+                    <p class="card-text">Vector Embeddings</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h3 class="card-title" id="avg-response-time">Loading...</h3>
+                    <p class="card-text">Avg Response (ms)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('web.upload_page') }}" class="btn btn-primary btn-lg w-100 mb-2">
+                                <i class="fas fa-upload me-2"></i>Upload New Document
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('web.search_page') }}" class="btn btn-info btn-lg w-100 mb-2">
+                                <i class="fas fa-search me-2"></i>Search Documents
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success btn-lg w-100 mb-2" onclick="loadSystemStats()">
+                                <i class="fas fa-sync me-2"></i>Refresh Stats
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Recent Documents</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_documents %}
+                        <div class="list-group list-group-flush">
+                            {% for doc in recent_documents %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ doc.filename }}</h6>
+                                        <p class="mb-1 text-muted">
+                                            <small>
+                                                <i class="fas fa-file me-1"></i>{{ doc.file_type.upper() }}
+                                                <i class="fas fa-weight-hanging ms-2 me-1"></i>{{ "%.1f"|format(doc.file_size / 1024) }} KB
+                                                <i class="fas fa-cubes ms-2 me-1"></i>{{ doc.chunk_count }} chunks
+                                            </small>
+                                        </p>
+                                        <small class="text-muted">{{ doc.upload_time.strftime('%Y-%m-%d %H:%M') if doc.upload_time else 'Unknown' }}</small>
+                                    </div>
+                                    <span class="badge bg-{{ 'success' if doc.embedding_status == 'completed' else 'warning' if doc.embedding_status == 'processing' else 'danger' }}">
+                                        {{ doc.embedding_status }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                            No documents uploaded yet.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-search me-2"></i>Recent Searches</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_searches %}
+                        <div class="list-group list-group-flush">
+                            {% for search in recent_searches %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ search.query_text[:50] }}{% if search.query_text|length > 50 %}...{% endif %}</h6>
+                                        <p class="mb-1 text-muted">
+                                            <small>
+                                                <i class="fas fa-list-ol me-1"></i>{{ search.results_count }} results
+                                                <i class="fas fa-clock ms-2 me-1"></i>{{ "%.0f"|format(search.response_time_ms) }}ms
+                                            </small>
+                                        </p>
+                                        <small class="text-muted">{{ search.query_time.strftime('%Y-%m-%d %H:%M') if search.query_time else 'Unknown' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-search-minus fa-2x mb-2"></i><br>
+                            No searches performed yet.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load system stats on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadSystemStats();
+});
+
+function loadSystemStats() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.vector_store_stats) {
+                document.getElementById('vector-count').textContent = data.vector_store_stats.total_vectors || 0;
+            }
+            
+            // Calculate average response time
+            if (data.recent_searches && data.recent_searches.length > 0) {
+                const avgTime = data.recent_searches.reduce((sum, search) => sum + (search.response_time_ms || 0), 0) / data.recent_searches.length;
+                document.getElementById('avg-response-time').textContent = Math.round(avgTime);
+            } else {
+                document.getElementById('avg-response-time').textContent = 'N/A';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+            document.getElementById('vector-count').textContent = 'Error';
+            document.getElementById('avg-response-time').textContent = 'Error';
+        });
+}
+</script>
+{% endblock %}
