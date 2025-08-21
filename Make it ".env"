@@ -1,0 +1,21 @@
+# Flask
+FLASK_APP=app
+FLASK_ENV=development
+FLASK_DEBUG=1
+
+# Security
+SESSION_SECRET=dev-secret-key-change-in-production
+
+# Database
+DATABASE_URL=sqlite:///knowledge_base.db
+
+# Groq
+GROQ_API_KEY=gsk_
+GROQ_QA_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+
+# Vector store
+FAISS_INDEX_PATH=faiss_index
+
+# Uploads
+UPLOAD_FOLDER=uploads
+MAX_CONTENT_LENGTH=52428800
